@@ -1,0 +1,60 @@
+# WaferLens-Sherlock configuration
+
+data:
+  # MixedWM38 is the primary target: 52x52 maps, 8 base defect types (multi-label).
+  dataset: mixedwm38                  # mixedwm38 | wm811k | synthetic
+  mixedwm38_path: data/Wafer_Map_Datasets.npz
+  wm811k_path: data/LSWMD.pkl
+  synthetic_path: data/synthetic_sample.npz
+  map_size: 52                        # square edge; maps padded/cropped to this
+  val_fraction: 0.15
+  test_fraction: 0.15
+  seed: 42
+  # The 8 base defect classes (order matches MixedWM38 arr_1 one-hot columns)
+  base_classes: [Center, Donut, Edge-Loc, Edge-Ring, Loc, Near-full, Scratch, Random]
+
+augment:
+  enabled: true
+  rotate90: true                      # wafer maps are rotation-tolerant
+  flip: true
+  jitter_defect_prob: 0.0             # optional die-level noise; 0 disables
+
+model:
+  name: cnn                           # cnn | vit
+  cnn:
+    channels: [32, 64, 128]
+    dropout: 0.3
+  vit:
+    patch_size: 4
+    dim: 128
+    depth: 6
+    heads: 4
+    mlp_dim: 256
+    dropout: 0.1
+
+train:
+  epochs: 40
+  batch_size: 128
+  lr: 3.0e-4
+  weight_decay: 1.0e-4
+  device: auto                        # auto -> mps > cuda > cpu
+  num_workers: 0                      # 0 is safest cross-platform; raise to 2-4 on your Mac
+  early_stop_patience: 8
+  threshold: 0.5                      # multi-label decision threshold
+  amp: false                          # mixed precision (CUDA only)
+  checkpoint_dir: artifacts/checkpoints
+
+eval:
+  threshold: 0.5
+
+triage:
+  top_k_dies: 50                      # number of dies to highlight in saliency
+  rules_path: null                    # null -> use built-in rule table
+
+reports:
+  report_dir: artifacts/reports
+  template_dir: src/waferlens/reports/templates
+
+tracking:
+  enabled: false                      # set true if mlflow installed
+  experiment: waferlens
