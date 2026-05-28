@@ -47,12 +47,43 @@ class Splits:
 def make_splits(maps: np.ndarray, labels: np.ndarray, classes: list[str],
                 val_fraction: float, test_fraction: float, seed: int,
                 augment: bool, rotate90: bool, flip: bool) -> Splits:
-    """Deterministic random split into train/val/test datasets."""
+    """Deterministic random split into train/val/test datasets.
+
+    Group-aware: identical wafer maps (the synthetic generator yields ~21%
+    exact duplicates) are kept together so no identical map can straddle the
+    train/test boundary (split leakage). All copies of a map are assigned to the
+    same split as a unit; every sample is still placed (total is preserved).
+    """
     n = len(maps)
     rng = np.random.default_rng(seed)
-    idx = rng.permutation(n)
+
+    # Cluster exact-duplicate maps into groups, then permute and split by group
+    # so identical maps never land on both sides of the split.
+    maps_arr = np.asarray(maps)
+    _, group_of = np.unique(maps_arr.reshape(n, -1), axis=0, return_inverse=True)
+    group_of = group_of.reshape(-1)
+    n_groups = group_of.max() + 1 if n else 0
+    group_perm = rng.permutation(n_groups)
+    # Order sample indices by their group's permuted rank; ties (same group)
+    # stay contiguous, so a split boundary never cuts through a group.
+    sort_key = group_perm[group_of]
+    idx = np.argsort(sort_key, kind="stable")
+
     n_test = int(n * test_fraction)
     n_val = int(n * val_fraction)
+    # Snap boundaries to group edges so a duplicate group isn't split across sets.
+    sorted_keys = sort_key[idx]
+
+    def _snap(boundary: int) -> int:
+        if boundary <= 0 or boundary >= n:
+            return boundary
+        # advance until the group at boundary-1 differs from the group at boundary
+        while boundary < n and sorted_keys[boundary] == sorted_keys[boundary - 1]:
+            boundary += 1
+        return boundary
+
+    n_test = _snap(n_test)
+    n_val = _snap(n_test + n_val) - n_test
     test_idx = idx[:n_test]
     val_idx = idx[n_test:n_test + n_val]
     train_idx = idx[n_test + n_val:]
