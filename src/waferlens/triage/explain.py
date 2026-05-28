@@ -44,14 +44,17 @@ def attention_rollout(model: WaferViT, x: torch.Tensor) -> np.ndarray:
     attns = model.attention_maps()         # list of (1, heads, N, N)
     if not attns:
         return np.zeros(x.shape[2:])
-    result = torch.eye(attns[0].size(-1))
+    # Keep the rollout on the model's device (MPS/CUDA/CPU). Building torch.eye on
+    # CPU and matmul-ing against on-device attention raises a device-mismatch error.
+    device = attns[0].device
+    result = torch.eye(attns[0].size(-1), device=device)
     for a in attns:
         a = a.mean(dim=1).squeeze(0)        # (N, N) head-averaged
-        a = a + torch.eye(a.size(-1))       # add residual
+        a = a + torch.eye(a.size(-1), device=device)   # add residual
         a = a / a.sum(dim=-1, keepdim=True)
         result = a @ result
-    # CLS row, drop the CLS->CLS entry, take CLS->patches
-    cls_to_patches = result[0, 1:].numpy()
+    # CLS row, drop the CLS->CLS entry, take CLS->patches; move to CPU for numpy
+    cls_to_patches = result[0, 1:].cpu().numpy()
     g = int(np.sqrt(len(cls_to_patches)))
     grid = cls_to_patches[: g * g].reshape(g, g)
     # upsample to image size
