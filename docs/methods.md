@@ -10,7 +10,7 @@ Three `Conv-BN-ReLU-MaxPool` blocks (32 → 64 → 128 channels) → global aver
 
 ## Vision Transformer (from scratch)
 
-- Patch embedding via a `Conv2d(stride=patch)`; default patch size 4 on a 52→pad→56 grid → 196 patches.
+- Patch embedding via a `Conv2d(stride=patch)`; default patch size 4 on a 52 grid (already divisible by 4, so pad=0) → 13×13 = 169 patches.
 - Learnable `[CLS]` token + positional embeddings.
 - `depth=6` transformer blocks, `dim=128`, `heads=4`, `mlp_dim=256`.
 - `[CLS]` representation → linear head of 8 logits. ~0.8M parameters.
@@ -38,6 +38,10 @@ Both yield a `(52, 52)` saliency map in `[0, 1]` that overlays the wafer map.
 ## Augmentation
 
 Random 90° rotations and horizontal/vertical flips. Wafer-map defect classes are (to good approximation) invariant to these, so they're label-preserving and reduce overfitting on the smaller defect classes.
+
+## Splitting
+
+Splitting is **group-aware** on exact-duplicate maps. The synthetic generator emits ~21% identical wafer maps, and a naive random split could place copies of the same map on both sides of the train/test boundary (leakage). `make_splits` clusters identical maps into groups and assigns each group wholesale to a single split, so no identical map straddles the split. Every sample is still placed, so split sizes are approximate (snapped to group boundaries) rather than exact fractions. Synthetic data is for pipeline verification only, not a benchmark.
 
 ## Training discipline
 

@@ -32,6 +32,9 @@ class Attention(nn.Module):
         self.qkv = nn.Linear(dim, dim * 3)
         self.proj = nn.Linear(dim, dim)
         self.drop = nn.Dropout(dropout)
+        # Cached attention for explainability. This is per-instance mutable state
+        # written on each forward pass, so it is only safe for single-threaded
+        # inference/explainability (not concurrent forward passes on one module).
         self.attn_weights: torch.Tensor | None = None
 
     def forward(self, x):

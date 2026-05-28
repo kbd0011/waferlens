@@ -11,6 +11,12 @@ from pathlib import Path
 import numpy as np
 from loguru import logger
 
+# NOTE: This is a SELF-CONTAINED 9-class single-label index space (incl. "none").
+# Its ordering (...Random, Scratch, Near-full) intentionally differs from the
+# 8-base-type MULTI-LABEL space in synthetic.py / mixedwm38.py BASE_CLASSES
+# (...Near-full, Scratch, Random). The two index spaces are independent and must
+# NOT be index-mapped onto each other; a class index here does not correspond to
+# the same defect type as the same index there.
 WM811K_CLASSES = [
     "none", "Center", "Donut", "Edge-Loc", "Edge-Ring", "Loc", "Random", "Scratch", "Near-full",
 ]
