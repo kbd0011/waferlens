@@ -1,4 +1,4 @@
-.PHONY: install env test lint format clean smoke data train-cnn train-vit compare triage ui demo
+.PHONY: install env test lint format clean smoke data train-cnn train-vit compare triage ui demo space-build deploy-hf
 
 PYTHON := python
 UV := uv
@@ -69,3 +69,11 @@ demo: smoke-data
 	@echo "  DEMO COMPLETE (synthetic data)."
 	@echo "  For real results: make data && make train-cnn && make train-vit && make compare"
 	@echo "  Launch UI:        make ui"
+
+# === Hugging Face Space ===
+
+space-build:
+	$(PYTHON) scripts/deploy_space.py --build
+
+deploy-hf:
+	$(PYTHON) scripts/deploy_space.py --deploy --repo-id kbd0011/waferlens
