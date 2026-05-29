@@ -7,6 +7,9 @@ Primary dataset: **MixedWM38** (38,015 wafer maps, 8 base defect types, mixed-ty
 ![python](https://img.shields.io/badge/python-3.12-blue.svg)
 ![torch](https://img.shields.io/badge/torch-2.x-ee4c2c.svg)
 ![license](https://img.shields.io/badge/license-MIT-green.svg)
+[![Live demo](https://img.shields.io/badge/%F0%9F%A4%97%20demo-Hugging%20Face%20Space-ffce1c.svg)](https://huggingface.co/spaces/kbdev0011/waferlens)
+
+▶ **Live demo:** https://huggingface.co/spaces/kbdev0011/waferlens  · synthetic demo (trains on first load); real results train on MixedWM38.
 
 ---
 
